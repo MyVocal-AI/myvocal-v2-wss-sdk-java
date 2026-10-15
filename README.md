@@ -1,91 +1,67 @@
 # MyVocal V2 WebSocket TTS SDK for Java
 
-The SDK is compiled with `--release 8` and delivered as one thin SDK Jar.
+Stream text to speech with `Skyblight-Turbo`. Requires Java 8 or later, an enterprise TTS API Key with dedicated concurrency, and a voice ID.
 
-Formally tested runtimes:
+## Install
 
-- Java 8
-- Java 11
-- Java 17
-- Java 21
-- Java 25
-
-Other Java versions rely on JVM upward bytecode compatibility and are not
-tested separately.
-
-## Dependencies
-
-This is a thin Jar. The application must supply OkHttp, Okio, and JSON-java at
-runtime; running the SDK Jar alone will produce `NoClassDefFoundError`.
-
-From the downloaded ZIP, install the SDK Jar into the local Maven repository:
+Download and extract [SDK v1.0.2](https://github.com/MyVocal-AI/myvocal-v2-wss-sdk-java/releases/tag/v1.0.2). The ZIP includes the SDK and runtime dependencies in `lib/`. For Maven, install the SDK with the supplied POM:
 
 ```bash
-mvn install:install-file -Dfile=lib/myvocal-v2-wss-sdk-1.0.1.jar -DgroupId=ai.myvocal -DartifactId=myvocal-v2-wss-sdk -Dversion=1.0.1 -Dpackaging=jar
+mvn install:install-file -Dfile=lib/myvocal-v2-wss-sdk-1.0.2.jar -DpomFile=pom.xml
 ```
 
-Then declare:
+Add this dependency to your application:
 
 ```xml
 <dependency>
   <groupId>ai.myvocal</groupId>
   <artifactId>myvocal-v2-wss-sdk</artifactId>
-  <version>1.0.1</version>
-</dependency>
-<dependency>
-  <groupId>com.squareup.okhttp3</groupId>
-  <artifactId>okhttp</artifactId>
-  <version>3.14.9</version>
-</dependency>
-<dependency>
-  <groupId>org.json</groupId>
-  <artifactId>json</artifactId>
-  <version>20231013</version>
+  <version>1.0.2</version>
 </dependency>
 ```
 
-The `ai.myvocal` coordinate is available to other projects only after the
-local install above or a future public registry release.
+Maven resolves runtime dependencies using the installed POM. For a manual classpath, include all JARs in `lib/`; see [runtime dependencies](DEPENDENCIES.md).
 
-## Example
+## Run the example
 
-```java
-V2TtsClient client = new V2TtsClient(
-        System.getenv("MYVOCAL_TTS_API_KEY"),
-        new V2TtsAdapter());
-try {
-    client.connect(30, TimeUnit.SECONDS);
-    client.start(StartRequest.builder(
-                    System.getenv("MYVOCAL_VOICE_ID"))
-            .language("en")
-            .voiceSetting(VoiceSetting.builder()
-                    .speed(1.0)
-                    .volume(1.0)
-                    .pitch(0)
-                    .emotion("calm")
-                    .build())
-            .subtitle(true, "word_streaming")
-            .sessionId("java-example-001")
-            .build(), 30, TimeUnit.SECONDS);
-    client.sendText("Hello from MyVocal.");
-    client.flush(30, TimeUnit.SECONDS);
-    CompletionResult result = client.finish(60, TimeUnit.SECONDS);
-    System.out.println(result.getAudio().length);
-} finally {
-    client.close();
-}
+Set your API Key and voice ID:
+
+```bash
+export MYVOCAL_TTS_API_KEY='YOUR_API_KEY'
+export MYVOCAL_VOICE_ID='YOUR_VOICE_ID'
 ```
 
-No JDK internal APIs are used. TLS certificate and hostname verification use
-the JVM and OkHttp defaults and are never disabled.
+PowerShell:
 
-`connect()` succeeds on the WebSocket handshake. Its legacy return value may
-be `null` when `connected_success` arrives later; use the connection state and
-listener events instead. Listener callbacks run synchronously on the OkHttp
-WebSocket reader, must return quickly, and must not call blocking client
-operations. Callback exceptions are reported to `onError` without changing
-the TTS protocol result.
+```powershell
+$env:MYVOCAL_TTS_API_KEY='YOUR_API_KEY'
+$env:MYVOCAL_VOICE_ID='YOUR_VOICE_ID'
+```
 
-## License
+From the extracted folder, on macOS/Linux:
 
-Apache License 2.0. See `LICENSE` and `NOTICE` in the SDK package.
+```bash
+javac -cp "lib/*" examples/BasicExample.java
+java -cp "lib/*:examples" BasicExample
+```
+
+On Windows:
+
+```powershell
+javac -cp "lib/*" examples/BasicExample.java
+java -cp "lib/*;examples" BasicExample
+```
+
+Running the example makes a real synthesis request and consumes character usage. It prints the final audio byte count and close code. To save or play audio, use the callbacks or the completed audio result described in the usage guide.
+
+## Use in your application
+
+Connect, start a task, send text fragments, and call finish. Finish waits for `task_finished` and Close Code `1000`. Sentence-end events and individual audio-final flags do not indicate completion of the whole task.
+
+- [Usage guide](USAGE.md): options, audio callbacks, subtitles, cancellation, timeouts, and errors.
+- [API reference](https://api-docs.myvocal.ai/3891085w0): request and response messages.
+- [Character usage](https://api-docs.myvocal.ai/336818975e0).
+
+The SDK does not automatically replay submitted text after a connection failure.
+
+Licensed under [Apache License 2.0](LICENSE). Dependency notices are in [NOTICE](NOTICE).

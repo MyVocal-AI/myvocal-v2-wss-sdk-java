@@ -1,20 +1,11 @@
-# Runtime Dependencies
+# Runtime dependencies
 
-`myvocal-v2-wss-sdk-1.0.1.jar` is a thin SDK Jar. The business application
-must provide:
+The SDK ZIP includes these libraries in `lib/`:
 
-```text
-com.squareup.okhttp3:okhttp:3.14.9
-org.json:json:20231013
-```
+| Dependency | Version |
+| --- | --- |
+| `com.squareup.okhttp3:okhttp` | `3.14.9` |
+| `com.squareup.okio:okio` | `1.17.2` |
+| `org.json:json` | `20231013` |
 
-OkHttp also resolves:
-
-```text
-com.squareup.okio:okio:1.17.2
-```
-
-Maven and Gradle users should declare the first two dependencies normally and
-allow their build tool to resolve transitive dependencies.
-
-Do not replace the default JVM/OkHttp trust manager or hostname verifier.
+For Maven, install the SDK with the supplied POM as shown in [README](README.md); Maven resolves these dependencies automatically. For a manual classpath, include the SDK JAR and all dependency JARs from `lib/`.
